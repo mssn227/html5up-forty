@@ -30,7 +30,7 @@ jobs:
 
       - name: Login to Docker Hub
         run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | \
+          echo "${{ secrets.DOCKERHUB_PASSWORD }}" | \
           docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build Docker image
@@ -45,10 +45,11 @@ jobs:
         run: |
           docker push $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
 
-      - name: Run Trivy vulnerability scanner
+      # ✅ TRIVY ACTIVÉ ET CORRIGÉ
+      - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/ci-html-demo:latest
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           format: table
           severity: CRITICAL,HIGH
           exit-code: 1
@@ -60,13 +61,9 @@ jobs:
   # ===============================
   deploy:
     needs: ci
-    runs-on: aws-runner
+    runs-on: ubuntu-latest   # ✅ corrigé (au lieu de aws-runner)
 
     steps:
-      - name: Pull latest image
-        run: |
-          echo "Hello deploy"
-
       - name: Pull latest image
         run: |
           docker pull $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
